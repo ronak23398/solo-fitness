@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "367190566146",
+    "firebase_url": "https://solo-fitness-e83f7-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "solo-fitness-e83f7",
+    "storage_bucket": "solo-fitness-e83f7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:367190566146:android:24c738e1df5bd3d85b4e1b",
+        "android_client_info": {
+          "package_name": "com.example.solo_fitness"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "367190566146-64ifndmiiqlptv6gi0pan582le381uem.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwQGOpuxV_tHUTp_O7WJW7H4k87hXBWBU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "367190566146-64ifndmiiqlptv6gi0pan582le381uem.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
