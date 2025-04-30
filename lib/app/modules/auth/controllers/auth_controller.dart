@@ -54,7 +54,7 @@ Future<void> loginWithEmailAndPassword() async {
     return;
   }
   
-  try {
+    try {
     isLoading.value = true;
     
     await _authService.signInWithEmailAndPassword(
@@ -65,6 +65,20 @@ Future<void> loginWithEmailAndPassword() async {
     // Clear form
     emailController.clear();
     passwordController.clear();
+    
+    // Show a loading dialog
+    Get.dialog(
+      Center(
+        child: CircularProgressIndicator(),
+      ),
+      barrierDismissible: false,
+    );
+    
+    // Add a short delay to ensure backend processes complete
+    await Future.delayed(Duration(seconds: 2));
+    
+    // Close the dialog
+    Get.back();
     
     // Navigate to home page after successful login
     Get.offAllNamed(AppRoutes.HOME);

@@ -1,7 +1,6 @@
 // home_view.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:solo_fitness/app/data/services/firebasetasksupload.dart';
 import 'package:solo_fitness/app/modules/home/views/components/avatar_section.dart';
 import 'package:solo_fitness/app/modules/home/views/components/custom_appbar.dart';
 import 'package:solo_fitness/app/modules/home/views/components/quest_header.dart';
@@ -13,6 +12,7 @@ import 'components/xp_section.dart';
 import 'components/deadline_section.dart';
 import 'components/streak_section.dart';
 import 'components/penalty_warning.dart';
+import 'components/low_time_warning.dart'; // New import for low time warning
 
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
@@ -23,20 +23,26 @@ class HomeView extends GetView<HomeController> {
       backgroundColor: AppColors.darkBackground,
       appBar: const CustomAppBar(),
       body: Obx(() {
+        // First check if we're still loading
         if (controller.isLoading.value) {
           return _buildLoadingIndicator();
         }
         
-        if (controller.hasPenaltyMissions.value) {
-          return PenaltyWarning();
-        }
-        
+        // Check for death first (highest priority)
         if (controller.userDied.value) {
-          // Redirect to death screen
-          Future.microtask(() => Get.offAllNamed('/death'));
-          return const SizedBox.shrink();
+          // Use a delayed navigation to avoid build errors
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Get.offAllNamed('/death');
+          });
+          return _buildLoadingIndicator(); // Show loading while navigating
         }
         
+        // Then check for penalty missions
+        if (controller.hasPenaltyMissions.value) {
+          return const PenaltyWarning();
+        }
+        
+        // Otherwise show the normal content
         return RefreshIndicator(
           onRefresh: controller.refreshTasks,
           color: AppColors.neonBlue,
@@ -56,11 +62,15 @@ class HomeView extends GetView<HomeController> {
                       requiredXp: controller.requiredXp.value,
                       userLevel: controller.userLevel.value,
                     ),
-                    // ElevatedButton(onPressed: (){uploadToFirebaseRealtimeDB();}, child: Text("upload ")),
+                    
                     // Daily deadline
                     DeadlineSection(
                       timeRemaining: controller.formattedTimeRemaining.value,
                     ),
+                    
+                    // Low time warning banner
+                    if (controller.showLowTimeWarning.value)
+                      const LowTimeWarning(),
                     
                     // Streak info
                     if (controller.currentStreak.value > 0)

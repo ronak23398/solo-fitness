@@ -5,7 +5,7 @@ import '../../../../data/theme/colors.dart';
 import '../../../../data/theme/text_styles.dart';
 
 class PenaltyWarning extends StatelessWidget {
-  const PenaltyWarning({Key? key}) : super(key: key);
+  const PenaltyWarning({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +18,10 @@ class PenaltyWarning extends StatelessWidget {
           child: Column(
             children: [
               ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: [Colors.red, Colors.orange.shade900],
-                ).createShader(bounds),
+                shaderCallback:
+                    (bounds) => LinearGradient(
+                      colors: [Colors.red, Colors.orange.shade900],
+                    ).createShader(bounds),
                 child: const Icon(
                   Icons.warning_amber_rounded,
                   color: Colors.white,
@@ -32,12 +33,7 @@ class PenaltyWarning extends StatelessWidget {
                 'PENALTY MISSIONS ACTIVE',
                 style: AppTextStyles.headerWhite.copyWith(
                   letterSpacing: 2,
-                  shadows: [
-                    Shadow(
-                      color: AppColors.dangerRed,
-                      blurRadius: 10,
-                    ),
-                  ],
+                  shadows: [Shadow(color: AppColors.dangerRed, blurRadius: 10)],
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -57,10 +53,18 @@ class PenaltyWarning extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () => Get.toNamed('/penalty'),
+                onPressed: () {
+                  // Add a small delay to prevent rapid navigation
+                  Future.delayed(const Duration(milliseconds: 300), () {
+                    Get.toNamed('/penalty');
+                  });
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),

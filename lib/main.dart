@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:solo_fitness/app/data/services/auth_service.dart';
+import 'package:solo_fitness/app/data/services/database_services/services_binding.dart';
 import 'package:solo_fitness/app/data/theme/app_theme.dart';
 import 'package:solo_fitness/app/routes/app_routes.dart';
 
@@ -12,7 +13,7 @@ void main() async {
   
   // Initialize Firebase
   await Firebase.initializeApp();
-  
+   ServiceBinding().dependencies();
   // Initialize GetStorage for local storage
   await GetStorage.init();
   

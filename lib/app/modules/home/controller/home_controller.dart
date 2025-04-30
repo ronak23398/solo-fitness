@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import 'package:solo_fitness/app/data/services/database_service.dart';
-import 'package:solo_fitness/app/data/services/firebasetasksupload.dart';
 import 'dart:async';
 import '../../../data/models/task_model.dart';
 import '../../../data/models/user_model.dart';
@@ -29,18 +28,77 @@ class HomeController extends GetxController {
   // Track the current day the user is on
   RxInt currentDay = 1.obs;
   
+  // New observable for low time warning
+  RxBool showLowTimeWarning = false.obs;
+  
   Timer? _timer;
   
   @override
   void onInit() {
     super.onInit();
     user.value = _authService.currentUser.value;
-    // Fetch the current day first, then load tasks
-    _fetchUserCurrentDay();
-    _startDailyTimer();
-    _updateUserStats();
-    checkExpiredTasks();
-    // _notificationService.scheduleDailyReminder();
+    
+     if (user.value?.id != null) {
+    _databaseService.taskService.setCurrentUser(user.value!.id!);
+  }
+    // Start with loading state
+    isLoading.value = true;
+    
+    // Initialize states safely
+    hasPenaltyMissions.value = false;
+    userDied.value = false;
+    showLowTimeWarning.value = false;
+    
+    // Use a single initialization flow
+    _initializeUserData();
+  }
+
+  Future<void> _initializeUserData() async {
+    try {
+      // First fetch the current day
+      await _fetchUserCurrentDay();
+      
+      // Then start the timer
+      _startDailyTimer();
+      
+      // Update user stats
+      _updateUserStats();
+      
+      // Load tasks without checking for expired tasks
+      await loadTasks();
+      
+      // Check if user already has penalty missions
+      await _checkPenaltyStatus();
+    } catch (e) {
+      print("Error initializing user data: $e");
+    } finally {
+      // Only set loading to false when everything is complete
+      isLoading.value = false;
+    }
+  }
+  
+  // New method to check if user already has penalty missions
+  Future<void> _checkPenaltyStatus() async {
+    if (user.value?.id == null) return;
+    
+    try {
+      // Check for penalty tasks directly
+      final penaltyTasks = await _databaseService.taskService.getPenaltyTasks();
+      hasPenaltyMissions.value = penaltyTasks.isNotEmpty;
+      
+      // If there are penalty tasks, update the tasks list to include them
+      if (hasPenaltyMissions.value) {
+        // Add penalty tasks to the tasks list if they're not already there
+        for (var task in penaltyTasks) {
+          if (!tasks.any((t) => t.id == task.id)) {
+            tasks.add(task);
+          }
+        }
+        tasks.refresh();
+      }
+    } catch (e) {
+      print("Error checking penalty status: $e");
+    }
   }
   
   @override
@@ -55,17 +113,13 @@ class HomeController extends GetxController {
     
     try {
       // Get current day from user profile
-      final day = await _databaseService.getCurrentUserDay(user.value!.id!);
+      final day = await _databaseService.taskService.getCurrentUserDay(user.value!.id!);
       currentDay.value = day;
       print("Current day for user ${user.value!.id}: ${currentDay.value}");
-      
-      // Now load tasks for this day
-      await loadTasks();
     } catch (e) {
       print("Error fetching current day: $e");
       // Default to day 1 if there's an error
       currentDay.value = 1;
-      await loadTasks();
     }
   }
   
@@ -98,38 +152,58 @@ class HomeController extends GetxController {
       
       _updateTimeRemaining(timeUntilMidnight);
       
-      // Check for expired tasks every minute
-      if (now.second == 0) {
-        checkExpiredTasks();
+      // Show warning if less than 4 hours remain and there are incomplete tasks
+      if (timeUntilMidnight.inHours <= 4 && !_areAllTasksCompleted()) {
+        showLowTimeWarning.value = true;
+      } else {
+        showLowTimeWarning.value = false;
       }
       
-      // Reset tasks at midnight
+      // Check for expired tasks and reset day ONLY when timer reaches zero
       if (timeUntilMidnight.inSeconds <= 0) {
         _handleDayReset();
       }
     });
   }
   
+  // Check if all non-penalty tasks are completed
+  bool _areAllTasksCompleted() {
+    final nonPenaltyTasks = tasks.where((task) => !task.isPenalty).toList();
+    return nonPenaltyTasks.every((task) => task.status == TaskStatus.completed);
+  }
+  
   // Handle day reset at midnight
-  void _handleDayReset() {
-    // Advance to next day if all tasks are completed
-    if (_canAdvanceToNextDay()) {
-      _advanceToNextDay();
+  void _handleDayReset() async {
+  try {
+    // First check for expired tasks before advancing day
+    await checkExpiredTasks();
+    
+    // If no penalty missions were created, then we can advance the day
+    if (!hasPenaltyMissions.value && _canAdvanceToNextDay()) {
+      await _advanceToNextDay();
+      
+      // Update the currentDay value in user model too
+      if (user.value != null) {
+        user.value!.currentday = currentDay.value;
+        await _databaseService.userService.updateUser(user.value!);
+      }
     } else {
       // Otherwise just refresh tasks
-      loadTasks();
+      await loadTasks();
     }
+    
+    // Force refresh tasks regardless
+    await loadTasks();
+  } catch (e) {
+    print("Error handling day reset: $e");
   }
+}
   
   // Check if user can advance to next day
   bool _canAdvanceToNextDay() {
     // Logic to determine if user can advance
     // For example, if all non-penalty tasks are completed
-    final nonPenaltyTasks = tasks.where((task) => !task.isPenalty).toList();
-    final allNonPenaltyCompleted = nonPenaltyTasks.every(
-        (task) => task.status == TaskStatus.completed);
-    
-    return allNonPenaltyCompleted;
+    return _areAllTasksCompleted();
   }
   
   // Advance user to next day
@@ -138,7 +212,7 @@ class HomeController extends GetxController {
     
     try {
       // Call database service to advance the day
-      await _databaseService.advanceUserToNextDay(user.value!.id!);
+      await _databaseService.taskService.advanceUserToNextDay(user.value!.id!);
       
       // Update local day counter
       currentDay.value += 1;
@@ -169,49 +243,57 @@ class HomeController extends GetxController {
   }
   
   // Load tasks for the current day
-  Future<void> loadTasks() async {
-    if (user.value == null) return;
+ Future<void> loadTasks() async {
+  if (user.value == null) return;
+  
+  try {
+    print("Loading tasks for day ${currentDay.value}");
     
-    try {
-      isLoading.value = true;
-      
-      print("Loading tasks for day ${currentDay.value}");
-      
-      // Get tasks for the current day
-      final dailyTasks = await _databaseService.getTasksForDay(currentDay.value);
-      
-      // Filter or modify tasks based on user's progress
-      // This depends on how your app tracks completion
-      final userCompletedTasks = await _databaseService.getUserCompletedTasks(user.value!.id!, currentDay.value);
-      
-      // Apply user-specific status to tasks
-      for (var task in dailyTasks) {
-        if (userCompletedTasks.contains(task.id)) {
-          task.complete();
-        }
+    // Get tasks for the current day
+    final dailyTasks = await _databaseService.taskService.getTasksForDay(currentDay.value);
+    
+    // Get user-specific task completion data using the existing method
+    final userCompletedTasks = await _databaseService.taskService.getUserCompletedTasks(
+      user.value!.id!, 
+      currentDay.value
+    );
+    
+    // Apply user-specific status to tasks
+    for (var task in dailyTasks) {
+      if (userCompletedTasks.contains(task.id)) {
+        task.complete();
       }
-      
-      tasks.value = dailyTasks;
-      
-      // Check for penalty missions
-      hasPenaltyMissions.value = dailyTasks.any((task) => task.isPenalty);
-      
-      // Update user stats
-      _updateUserStats();
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to load tasks: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } finally {
-      isLoading.value = false;
     }
+    
+    // Update tasks list 
+    tasks.value = dailyTasks;
+    
+    // After loading tasks, check if we already have penalty missions
+    await _checkPenaltyStatus();
+    
+  } catch (e) {
+    print("Failed to load tasks: $e");
+    Get.snackbar(
+      'Error',
+      'Failed to load tasks: $e',
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
+}
   
   // Refresh tasks
   Future<void> refreshTasks() async {
-    await loadTasks();
+    // Set temporary loading indicator
+    final wasLoading = isLoading.value;
+    isLoading.value = true;
+    
+    try {
+      await loadTasks();
+    } catch (e) {
+      print("Error refreshing tasks: $e");
+    } finally {
+      isLoading.value = wasLoading || false;
+    }
   }
   
   // Mark a task as completed by ID
@@ -232,7 +314,7 @@ class HomeController extends GetxController {
       final oldClass = user.value!.playerClass;
       
       // Complete the task
-      await _databaseService.completeTask(user.value!.id!, task, user.value!,);
+      await _databaseService.taskService.completeTask(user.value!.id!, task, user.value!);
       
       // Update local task
       final index = tasks.indexWhere((t) => t.id == task.id);
@@ -242,12 +324,18 @@ class HomeController extends GetxController {
       }
       
       // Update local user
-      user.value = await _databaseService.getUser(user.value!.id!);
+      user.value = await _databaseService.userService.getUser(user.value!.id!);
       
       // Update user stats
       _updateUserStats();
       
-      // Check if all tasks are completed to advance to next day
+      // Check if task was a penalty task
+      if (task.isPenalty) {
+        // Recheck penalty status after completing a penalty task
+        await _checkPenaltyStatus();
+      }
+      
+      // Check if all tasks are completed to show message
       if (_canAdvanceToNextDay() && !hasPenaltyMissions.value) {
         Get.snackbar(
           'All Tasks Completed',
@@ -286,42 +374,59 @@ class HomeController extends GetxController {
     }
   }
   
-  // Check expired tasks and create penalties if needed
+  // Check expired tasks and create penalties if needed - now ONLY called at midnight
   Future<void> checkExpiredTasks() async {
     if (user.value == null) return;
     
     try {
+      print("Checking for expired tasks at day reset");
+      
       // Filter expired and pending tasks
       final expiredTasks = tasks
           .where((task) => 
               task.status == TaskStatus.pending && 
-              task.isExpired())
+              !task.isPenalty) // Only check non-penalty tasks
           .toList();
       
-      if (expiredTasks.isEmpty) return;
+      if (expiredTasks.isEmpty) {
+        print("No expired tasks found");
+        return;
+      }
+      
+      print("Found ${expiredTasks.length} expired tasks");
       
       // Mark tasks as failed
       for (final task in expiredTasks) {
         task.fail();
-        await _databaseService.updateUserTaskStatus(user.value!.id!, task.id, TaskStatus.failed, currentDay.value);
+        await _databaseService.taskService.updateUserTaskStatus(user.value!.id!, task.id, TaskStatus.failed, currentDay.value);
         
-        // Create a penalty task if it's not already a penalty
-        if (!task.isPenalty) {
-          await _databaseService.createPenaltyTask(user.value!.id!, task.category,);
-          hasPenaltyMissions.value = true;
-        } else {
-          // If it's already a penalty and failed, mark user as dead
-          await _databaseService.markUserAsDead(user.value!.id!);
-          // await _notificationService.showDeathNotification();
-          userDied.value = true;
-          Get.offAllNamed('/death');
-          return;
-        }
+        // Create a penalty task
+        await _databaseService.taskService.createPenaltyTask(user.value!.id!, task.category);
+        print("Created penalty task for expired task: ${task.title}");
       }
       
-      // Refresh tasks
+      // Set penalty missions flag to true
+      hasPenaltyMissions.value = true;
+      
+      // Check if there are existing penalty tasks that also expired
+      final expiredPenaltyTasks = tasks
+          .where((task) => 
+              task.status == TaskStatus.pending && 
+              task.isPenalty)
+          .toList();
+      
+      if (expiredPenaltyTasks.isNotEmpty) {
+        // If a penalty task expired, mark user as dead
+        await _databaseService.userService.markUserAsDead(user.value!.id!);
+        userDied.value = true;
+        Get.offAllNamed('/death');
+        return;
+      }
+      
+      // Refresh tasks to include the new penalty tasks
       await loadTasks();
     } catch (e) {
+      print("Error checking expired tasks: $e");
       Get.snackbar(
         'Error',
         'Failed to check expired tasks: $e',

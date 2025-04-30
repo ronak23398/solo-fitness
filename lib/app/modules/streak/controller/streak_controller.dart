@@ -24,7 +24,7 @@ class StreakController extends GetxController {
     isLoading.value = true;
     
     // Fix for nullable StreakModel
-    StreakModel? userStreak = await _databaseService.getUserStreak();
+    StreakModel? userStreak = await _databaseService.streakService.getUserStreak();
     if (userStreak != null) {
       streak.value = userStreak;
     } else {
@@ -65,16 +65,16 @@ class StreakController extends GetxController {
     if (hasReward.value) {
       try {
         // Award XP
-        await _databaseService.addUserXP(xpReward.value);
+        await _databaseService.userService.addUserXP(xpReward.value);
         
         // For the 7-day streak, add bonus task
         if (streak.value.currentStreak == 7) {
-          await _databaseService.addBonusTask();
+          await _databaseService.taskService.addBonusTask();
         }
         
         // For 30-day streak, add special title
         if (streak.value.currentStreak == 30) {
-          await _databaseService.addUserTitle("Steadfast Hunter");
+          await _databaseService.userService.addUserTitle("Steadfast Hunter");
         }
         
         Get.snackbar(
@@ -83,7 +83,7 @@ class StreakController extends GetxController {
         );
         
         // Mark reward as claimed
-        await _databaseService.markStreakRewardClaimed(streak.value.currentStreak);
+        await _databaseService.streakService.markStreakRewardClaimed(streak.value.currentStreak);
         hasReward.value = false;
         
         Get.back(); // Return to previous screen

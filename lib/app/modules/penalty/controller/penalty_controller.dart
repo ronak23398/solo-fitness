@@ -18,7 +18,7 @@ class PenaltyController extends GetxController {
   Future<void> _loadPenaltyTasks() async {
     try {
       isLoading.value = true;
-      penaltyTasks.value = await _databaseService.getPenaltyTasks();
+      penaltyTasks.value = await _databaseService.taskService.getPenaltyTasks();
       isLoading.value = false;
     } catch (e) {
       isLoading.value = false;
@@ -28,7 +28,7 @@ class PenaltyController extends GetxController {
   
   Future<void> markPenaltyTaskCompleted(String taskId) async {
     try {
-      await _databaseService.markTaskCompleted(taskId);
+      await _databaseService.taskService.markTaskCompleted(taskId);
       // Update the task in the list
       int index = penaltyTasks.indexWhere((task) => task.id == taskId);
       if (index != -1) {
@@ -37,11 +37,11 @@ class PenaltyController extends GetxController {
         penaltyTasks.refresh(); // Refresh to update UI
         
         // Apply rewards
-        await _databaseService.addUserStats(
-          penaltyTasks[index].category,
+        await _databaseService.userService.addUserStats(
+          penaltyTasks[index].category as String,
           penaltyTasks[index].statPoints,
         );
-        await _databaseService.addUserXP(penaltyTasks[index].xpPoints);
+        await _databaseService.userService.addUserXP(penaltyTasks[index].xpPoints);
         
         Get.snackbar(
           'Success',
@@ -77,7 +77,7 @@ class PenaltyController extends GetxController {
     if (!allCompleted && penaltyTasks.isNotEmpty && 
         DateTime.now().isAfter(penaltyTasks[0].expiresAt)) {
       // User has failed penalty tasks - trigger death
-      await _databaseService.setUserDied(true);
+      await _databaseService.userService.setUserDied(true);
       // _notificationService.showDeathNotification();
       Get.offAllNamed('/death');
     }

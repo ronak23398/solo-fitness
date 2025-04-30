@@ -56,13 +56,13 @@ class AuthService extends GetxService {
 
   Future<void> _fetchUserData(String uid) async {
     try {
-      final userData = await _databaseService.getUser(uid);
+      final userData = await _databaseService.userService.getUser(uid);
       if (userData != null) {
         currentUser.value = userData;
         
         // Update last login
         userData.lastLogin = DateTime.now();
-        await _databaseService.updateUser(userData);
+        await _databaseService.userService.updateUser(userData);
       }
     } catch (e) {
       print('Error fetching user data: $e');
@@ -102,7 +102,7 @@ class AuthService extends GetxService {
         photoUrl: credential.user?.photoURL,
       );
       
-      await _databaseService.createUser(newUser);
+      await _databaseService.userService.createUser(newUser);
       
       return credential;
     } catch (e) {
@@ -138,7 +138,7 @@ class AuthService extends GetxService {
           photoUrl: userCredential.user?.photoURL,
         );
         
-        await _databaseService.createUser(newUser);
+        await _databaseService.userService.createUser(newUser);
       }
       
       return userCredential;
@@ -172,7 +172,7 @@ class AuthService extends GetxService {
   // Update user
   Future<void> updateUser(UserModel user) async {
     try {
-      await _databaseService.updateUser(user);
+      await _databaseService.userService.updateUser(user);
       currentUser.value = user;
     } catch (e) {
       print('Error updating user: $e');
@@ -186,7 +186,7 @@ class AuthService extends GetxService {
         if (currentUser.value!.blackHearts > 0) {
           currentUser.value!.blackHearts--;
           currentUser.value!.isDead = false;
-          await _databaseService.updateUser(currentUser.value!);
+          await _databaseService.userService.updateUser(currentUser.value!);
         }
       }
     } catch (e) {
@@ -200,7 +200,7 @@ class AuthService extends GetxService {
     try {
       if (currentUser.value != null) {
         currentUser.value!.blackHearts += count;
-        await _databaseService.updateUser(currentUser.value!);
+        await _databaseService.userService.updateUser(currentUser.value!);
       }
     } catch (e) {
       print('Error adding black heart: $e');

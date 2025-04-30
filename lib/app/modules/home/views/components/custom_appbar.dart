@@ -14,15 +14,16 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<HomeController>();
-    
+
     return AppBar(
       title: Text(
         'ARISE',
         style: AppTextStyles.mainTitle.copyWith(
-          foreground: Paint()
-            ..shader = LinearGradient(
-              colors: [Colors.white, AppColors.neonBlue],
-            ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
+          foreground:
+              Paint()
+                ..shader = LinearGradient(
+                  colors: [Colors.white, AppColors.neonBlue],
+                ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
         ),
       ),
       centerTitle: true,
@@ -54,25 +55,25 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           margin: const EdgeInsets.only(right: 8),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: AppColors.neonBlue.withOpacity(0.7), width: 1.5),
+            border: Border.all(
+              color: AppColors.neonBlue.withOpacity(0.7),
+              width: 1.5,
+            ),
           ),
           child: IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () => controller.signOut(),
           ),
-          
-          
         ),
-        // Container(
-        //   margin: const EdgeInsets.only(right: 8),
-        //   decoration: BoxDecoration(
-        //     shape: BoxShape.circle,
-        //     border: Border.all(color: AppColors.neonBlue.withOpacity(0.7), width: 1.5),
+        // IconButton(
+        //   onPressed: () => Get.toNamed('/upload-items'),
+        //   icon: Icon(Icons.upload_file),
+        //   style: ElevatedButton.styleFrom(
+        //     padding: EdgeInsets.all(12),
+        //     backgroundColor: Colors.deepPurple,
+        //     foregroundColor: Colors.white,
         //   ),
-        //   child: IconButton(
-        //     icon: const Icon(Icons.logout, color: Colors.white),
-        //     onPressed: () => Get.toNamed("/streaks"),
-        //   ),)
+        // ),
       ],
     );
   }

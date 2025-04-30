@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:solo_fitness/app/data/theme/colors.dart';
 import 'package:solo_fitness/app/data/theme/text_styles.dart';
+import 'package:solo_fitness/app/modules/home/views/components/avatar_section.dart';
 import 'package:solo_fitness/app/modules/profile/views/achievement_section.dart';
 import 'package:solo_fitness/app/modules/profile/views/black_heart_status.dart';
 import 'package:solo_fitness/app/modules/profile/views/profile_header.dart';
@@ -42,6 +43,7 @@ class ProfileView extends GetView<ProfileController> {
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               children: [
+                PlayerAvatarSection(),
                 // Profile Header with Avatar and Stats
                 ProfileHeader(
                   user: controller.user.value,

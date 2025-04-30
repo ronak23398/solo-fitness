@@ -28,7 +28,7 @@ class ProfileController extends GetxController {
         throw Exception('User not authenticated');
       }
       
-      UserModel? userData = await _databaseService.getUser(userId);
+      UserModel? userData = await _databaseService.userService.getUser(userId);
       if (userData != null) {
         user.value = userData;
         levelProgress.value = userData.calculateLevelProgress();

@@ -1,4 +1,5 @@
 // app_routes.dart
+import 'package:get/get.dart';
 import 'package:get/get_navigation/src/routes/get_route.dart';
 import 'package:get/get_navigation/src/routes/transitions_type.dart';
 import 'package:solo_fitness/app/modules/auth/bindings/auth_bindings.dart';
@@ -15,9 +16,11 @@ import 'package:solo_fitness/app/modules/penalty/views/penalty_view.dart';
 import 'package:solo_fitness/app/modules/profile/bindings/profile_binding.dart';
 import 'package:solo_fitness/app/modules/profile/views/profile_view.dart';
 import 'package:solo_fitness/app/modules/splash_screen/splash_screen.dart';
+import 'package:solo_fitness/app/modules/store/bindings/store_binding.dart';
+import 'package:solo_fitness/app/modules/store/views/product_details.dart';
+import 'package:solo_fitness/app/modules/store/views/store_view.dart';
 import 'package:solo_fitness/app/modules/streak/bindings/streak_binding.dart';
 import 'package:solo_fitness/app/modules/streak/views/streak_view.dart';
-
 
 abstract class AppRoutes {
   // Auth routes
@@ -25,27 +28,30 @@ abstract class AppRoutes {
   static const LOGIN = '/login';
   static const REGISTER = '/register';
   static const FORGOT_PASSWORD = '/forgot-password';
-  
+
   // Main app routes
   static const HOME = '/home';
   static const PROFILE = '/profile';
   static const TASK_DETAILS = '/task-details';
   static const STATS = '/stats';
   static const SETTINGS = '/settings';
-  
+
   // Special screens
   static const LEVEL_UP = '/level-up';
   static const CLASS_UPGRADE = '/class-upgrade';
   static const DEATH_SCREEN = '/death-screen';
-  static const PENALTY_TASK = '/penalty-task';
+  static const PENALTY_TASK = '/penalty';
   static const STREAKS = '/streaks';
-  
+
   // Tutorial
   static const ONBOARDING = '/onboarding';
-  
-  // Premium features
-  static const SHOP = '/shop';
+
+   // Store routes
+  static const STORE = '/store';
+  static const PRODUCT_DETAIL = '/product-detail';
+  static const ADD_PRODUCT = '/add-product';
   static const BLACK_HEART = '/black-heart';
+  
 }
 
 class AppPages {
@@ -100,24 +106,28 @@ class AppPages {
       binding: StreakBinding(),
       transition: Transition.rightToLeft,
     ),
-    
-  GetPage(
-    name: AppRoutes.SPLASH,
-    page: () => SplashScreen(),
-    transition: Transition.fadeIn,
-  ),
-  GetPage(
-    name: AppRoutes.LEVEL_UP,
-    page: () => LevelupView(),
-    transition: Transition.fadeIn,
-  ),
-  // GetPage(
-  //   name: AppRoutes.SHOP,
-  //   page: () => store(),
-  //   transition: Transition.fadeIn,
-  // ),
 
-  // Your other routes...
+    GetPage(
+      name: AppRoutes.SPLASH,
+      page: () => SplashScreen(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.LEVEL_UP,
+      page: () => LevelupView(),
+      transition: Transition.fadeIn,
+    ),
+      GetPage(
+      name: AppRoutes.STORE,
+      page: () => const StoreView(),
+      binding: StoreBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.PRODUCT_DETAIL,
+      page: () => const ProductDetailView(),
+      binding: StoreBinding(),
+    )
+    // Your other routes...
 
     // Additional routes can be added here
   ];
