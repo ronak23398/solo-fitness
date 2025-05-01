@@ -43,7 +43,6 @@ class ProfileView extends GetView<ProfileController> {
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               children: [
-                PlayerAvatarSection(),
                 // Profile Header with Avatar and Stats
                 ProfileHeader(
                   user: controller.user.value,

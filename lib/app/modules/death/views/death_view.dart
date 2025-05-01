@@ -34,7 +34,7 @@ class DeathView extends GetView<DeathController> {
               children: [
                 // Broken Heart Animation
                 Image.asset(
-                  'assets/images/broken_heart.png',
+                  'assets/images/broken-heart.gif',
                   width: 120,
                   height: 120,
                 ),
@@ -76,14 +76,10 @@ class DeathView extends GetView<DeathController> {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
-                      Image.asset(
-                        'assets/images/black_heart.png',
-                        width: 80,
-                        height: 80,
-                      ),
+                      
                       const SizedBox(height: 24),
                       CustomButton(
-                        text: 'USE BLACK HEART (₹49)',
+                        text: 'USE BLACK HEART (₹2000)',
                         onPressed: controller.useBlackHeart,
                         isLoading: controller.isProcessing.value
                       ),

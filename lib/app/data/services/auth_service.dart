@@ -60,9 +60,6 @@ class AuthService extends GetxService {
       if (userData != null) {
         currentUser.value = userData;
         
-        // Update last login
-        userData.lastLogin = DateTime.now();
-        await _databaseService.userService.updateUser(userData);
       }
     } catch (e) {
       print('Error fetching user data: $e');

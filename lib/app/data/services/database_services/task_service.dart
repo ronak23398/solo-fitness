@@ -409,35 +409,40 @@ class TaskService {
   }
 
   // Method to update user progress to the next day
-  Future<void> advanceUserToNextDay(String userId) async {
-    try {
-      final userRef = _database.ref().child('users').child(userId);
-      final snapshot = await userRef
-          .child('currentDay')
-          .once()
-          .then((event) => event.snapshot);
+Future<void> advanceUserToNextDay(String userId) async {
+  try {
+    final userRef = _database.ref().child('users').child(userId);
+    
+    // Get the current day field name used in your database
+    // IMPORTANT: Use consistent capitalization for the field
+    final String dayFieldName = 'currentday'; // Use lowercase 'd' consistently
+    
+    final snapshot = await userRef
+        .child(dayFieldName)
+        .once()
+        .then((event) => event.snapshot);
 
-      int currentDay = 1;
-      if (snapshot.exists && snapshot.value != null) {
-        currentDay = int.parse(snapshot.value.toString());
-      }
-
-      // Move to next day, cap at 50
-      int nextDay = currentDay + 1;
-      if (nextDay > 50) nextDay = 50;
-
-      // Update user's current day
-      await userRef.update({
-        'currentday': nextDay, // lowercase 'd' to match your database field
-        'lastUpdated': ServerValue.timestamp,
-      });
-
-      print("Advanced user $userId to day $nextDay");
-    } catch (e) {
-      print("Error advancing user day: $e");
-      throw e;
+    int currentDay = 1;
+    if (snapshot.exists && snapshot.value != null) {
+      currentDay = int.parse(snapshot.value.toString());
     }
+
+    // Move to next day, cap at 50
+    int nextDay = currentDay + 1;
+    if (nextDay > 50) nextDay = 50;
+
+    // Update user's current day using the SAME field name
+    await userRef.update({
+      dayFieldName: nextDay,
+      'lastUpdated': ServerValue.timestamp,
+    });
+
+    print("Advanced user $userId to day $nextDay");
+  } catch (e) {
+    print("Error advancing user day: $e");
+    throw e;
   }
+}
 
   // Helper function to get the current user's progress day
   Future<int> getCurrentUserDay(String userId) async {

@@ -5,6 +5,7 @@ import 'package:solo_fitness/app/data/theme/colors.dart';
 import 'package:solo_fitness/app/data/theme/text_styles.dart';
 import 'package:solo_fitness/app/data/widgets/glowing_avatar.dart';
 import 'package:solo_fitness/app/data/widgets/xp_progress_bar.dart';
+import 'package:solo_fitness/app/modules/home/views/components/avatar_section.dart';
 
 class ProfileHeader extends StatelessWidget {
   final UserModel user;
@@ -20,7 +21,7 @@ class ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -43,33 +44,8 @@ class ProfileHeader extends StatelessWidget {
       child: Column(
         children: [
           // Avatar with class aura
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              // Class aura background
-              Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      _getClassColor(currentClass).withOpacity(0.7),
-                      _getClassColor(currentClass).withOpacity(0.0),
-                    ],
-                    stops: const [0.5, 1.0],
-                  ),
-                ),
-              ),
-              // Avatar
-              GlowingAvatar(
-                level: user.level,
-                playerClass: currentClass,
-                size: 120,
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
+          PlayerAvatarSection(),
+          const SizedBox(height: 10),
           
           // Username with custom text style
           Text(

@@ -34,24 +34,27 @@ class HomeController extends GetxController {
   Timer? _timer;
   
   @override
-  void onInit() {
-    super.onInit();
-    user.value = _authService.currentUser.value;
-    
-     if (user.value?.id != null) {
+void onInit() {
+  super.onInit();
+  user.value = _authService.currentUser.value;
+  
+  if (user.value?.id != null) {
     _databaseService.taskService.setCurrentUser(user.value!.id!);
   }
-    // Start with loading state
-    isLoading.value = true;
-    
-    // Initialize states safely
-    hasPenaltyMissions.value = false;
-    userDied.value = false;
-    showLowTimeWarning.value = false;
-    
-    // Use a single initialization flow
+  
+  // Start with loading state
+  isLoading.value = true;
+  
+  // Initialize states safely
+  hasPenaltyMissions.value = false;
+  userDied.value = false;
+  showLowTimeWarning.value = false;
+  
+  // Check for day advancement first, then initialize data
+  _checkDayAdvancement().then((_) {
     _initializeUserData();
-  }
+  });
+}
 
   Future<void> _initializeUserData() async {
     try {
@@ -77,6 +80,85 @@ class HomeController extends GetxController {
     }
   }
   
+Future<void> _checkDayAdvancement() async {
+  if (user.value?.id == null) return;
+  
+  try {
+    // Get current time
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    
+    // Get the user's last login date
+    final lastLogin = user.value!.lastLogin;
+    final lastLoginDay = DateTime(lastLogin.year, lastLogin.month, lastLogin.day);
+    
+    // Calculate days difference
+    final difference = today.difference(lastLoginDay).inDays;
+    
+    print("Days since last login: $difference");
+    
+    if (difference == 0) {
+      // Same day, do nothing
+      print("Same day, continuing as normal");
+      
+    } else if (difference == 1) {
+      // One day passed, check for completed tasks from PREVIOUS day
+      print("One day passed, checking yesterday's tasks");
+      
+      // IMPORTANT: First load the previous day's tasks to check their status
+      final previousDay = currentDay.value;
+      final previousDayTasks = await _databaseService.taskService.getTasksForDay(previousDay);
+      final userCompletedTasks = await _databaseService.taskService.getUserCompletedTasks(
+        user.value!.id!, 
+        previousDay
+      );
+      
+      // Check if all tasks were completed
+      bool allTasksCompleted = true;
+      for (var task in previousDayTasks) {
+        if (!userCompletedTasks.contains(task.id)) {
+          allTasksCompleted = false;
+          break;
+        }
+      }
+      
+      if (allTasksCompleted) {
+        // All tasks were completed, advance to next day
+        print("All tasks from yesterday were completed, advancing to next day");
+        await _advanceToNextDay();
+      } else {
+        // Some tasks were not completed, check for penalties
+        print("Some tasks from yesterday were not completed, checking for penalties");
+        await checkExpiredTasks();
+        
+        // If no penalties created for some reason, still try to advance day
+        if (!hasPenaltyMissions.value) {
+          await _advanceToNextDay();
+        }
+      }
+      // Update lastLogin in database to current time
+    if (user.value != null) {
+      user.value!.lastLogin = now;
+      await _databaseService.userService.updateUser(user.value!);
+    }
+    } else if (difference > 1) {
+      // Multiple days passed, mark user as dead
+      print("Multiple days passed, user is dead");
+      await _databaseService.userService.markUserAsDead(user.value!.id!);
+      userDied.value = true;
+      
+      // Delay navigation slightly to ensure other init processes don't interfere
+      Future.delayed(Duration(milliseconds: 300), () {
+        Get.offAllNamed('/death');
+      });
+    }
+    
+    
+  } catch (e) {
+    print("Error checking day advancement: $e");
+  }
+}
+
   // New method to check if user already has penalty missions
   Future<void> _checkPenaltyStatus() async {
     if (user.value?.id == null) return;
@@ -137,34 +219,39 @@ class HomeController extends GetxController {
   }
   
   // Start timer to count down to daily reset
-  void _startDailyTimer() {
-    // Calculate time until midnight
+  // Start timer to count down to daily reset (for UI only)
+void _startDailyTimer() {
+  // Calculate time until midnight
+  final now = DateTime.now();
+  final tomorrow = DateTime(now.year, now.month, now.day + 1);
+  final timeUntilMidnight = tomorrow.difference(now);
+  
+  _updateTimeRemaining(timeUntilMidnight);
+  
+  _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
     final now = DateTime.now();
     final tomorrow = DateTime(now.year, now.month, now.day + 1);
     final timeUntilMidnight = tomorrow.difference(now);
     
     _updateTimeRemaining(timeUntilMidnight);
     
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final now = DateTime.now();
-      final tomorrow = DateTime(now.year, now.month, now.day + 1);
-      final timeUntilMidnight = tomorrow.difference(now);
+    // Show warning if less than 4 hours remain and there are incomplete tasks
+    if (timeUntilMidnight.inHours <= 4 && !_areAllTasksCompleted()) {
+      showLowTimeWarning.value = true;
+    } else {
+      showLowTimeWarning.value = false;
+    }
+    
+    // If timer reaches zero, refresh the page
+    if (timeUntilMidnight.inSeconds <= 0) {
+      // Don't handle actual day advancement here, just refresh
+      refreshTasks();
       
-      _updateTimeRemaining(timeUntilMidnight);
-      
-      // Show warning if less than 4 hours remain and there are incomplete tasks
-      if (timeUntilMidnight.inHours <= 4 && !_areAllTasksCompleted()) {
-        showLowTimeWarning.value = true;
-      } else {
-        showLowTimeWarning.value = false;
-      }
-      
-      // Check for expired tasks and reset day ONLY when timer reaches zero
-      if (timeUntilMidnight.inSeconds <= 0) {
-        _handleDayReset();
-      }
-    });
-  }
+      // Reset the timer for the next day
+      _startDailyTimer();
+    }
+  });
+}
   
   // Check if all non-penalty tasks are completed
   bool _areAllTasksCompleted() {
@@ -173,7 +260,8 @@ class HomeController extends GetxController {
   }
   
   // Handle day reset at midnight
-  void _handleDayReset() async {
+  // Handle day reset - now only called from _checkDayAdvancement
+void _handleDayReset() async {
   try {
     // First check for expired tasks before advancing day
     await checkExpiredTasks();
@@ -207,30 +295,43 @@ class HomeController extends GetxController {
   }
   
   // Advance user to next day
-  Future<void> _advanceToNextDay() async {
-    if (user.value == null) return;
+  // Advance user to next day
+Future<void> _advanceToNextDay() async {
+  if (user.value == null) return;
+  
+  try {
+    print("Advancing user to next day");
     
-    try {
-      // Call database service to advance the day
-      await _databaseService.taskService.advanceUserToNextDay(user.value!.id!);
-      
-      // Update local day counter
-      currentDay.value += 1;
-      if (currentDay.value > 50) currentDay.value = 50; // Cap at 50
-      
-      // Refresh tasks for new day
-      await loadTasks();
-      
-      // Show notification or message about new day
-      Get.snackbar(
-        'New Day',
-        'You\'ve advanced to Day ${currentDay.value}!',
-        snackPosition: SnackPosition.TOP,
-      );
-    } catch (e) {
-      print("Error advancing to next day: $e");
-    }
+    // Increment local day counter
+    currentDay.value += 1;
+    if (currentDay.value > 50) currentDay.value = 50; // Cap at 50
+    
+    // Update user's current day in the database
+    user.value!.currentday = currentDay.value;
+    await _databaseService.userService.updateUser(user.value!);
+    
+    // IMPORTANT: Call the database service to advance the day - ensure this method
+    // handles generating new tasks for the next day properly
+    await _databaseService.taskService.advanceUserToNextDay(user.value!.id!);
+    
+    // Explicitly log the day change
+    print("Advanced to Day ${currentDay.value}");
+    
+    // Refresh tasks for new day
+    await loadTasks();
+    
+    // Show notification or message about new day
+    Get.snackbar(
+      'New Day',
+      'You\'ve advanced to Day ${currentDay.value}!',
+      snackPosition: SnackPosition.TOP,
+    );
+  } catch (e) {
+    print("Error advancing to next day: $e");
+    // Log full error details
+    print(e.toString());
   }
+}
   
   // Update the formatted time remaining string
   void _updateTimeRemaining(Duration timeRemaining) {

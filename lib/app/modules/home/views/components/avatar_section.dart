@@ -13,7 +13,7 @@ class PlayerAvatarSection extends StatelessWidget {
     final controller = Get.find<HomeController>();
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 30),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Stack(
         alignment: Alignment.center,
         children: [

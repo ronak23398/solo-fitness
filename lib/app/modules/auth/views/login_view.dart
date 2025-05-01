@@ -1,4 +1,3 @@
-// login_view.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:solo_fitness/app/data/theme/colors.dart';
@@ -7,7 +6,7 @@ import 'package:solo_fitness/app/data/widgets/custom_button.dart';
 import '../controllers/auth_controller.dart';
 
 class LoginView extends GetView<AuthController> {
-  const LoginView({Key? key}) : super(key: key);
+  const LoginView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +61,7 @@ class LoginView extends GetView<AuthController> {
                   ),
                   const SizedBox(height: 60),
                   // Email Field
-                  TextField(
+                  TextFormField(  // Changed from TextField to TextFormField to allow validation
                     controller: controller.emailController,
                     style: AppTextStyles.inputText,
                     decoration: InputDecoration(
@@ -76,48 +75,59 @@ class LoginView extends GetView<AuthController> {
                       ),
                       prefixIcon: Icon(Icons.email, color: AppColors.textLight),
                     ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      if (!GetUtils.isEmail(value)) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   // Password Field
-                  Obx(
-                    () => TextField(
-                      controller: controller.passwordController,
-                      obscureText: controller.isPasswordVisible.value,
-                      style: AppTextStyles.inputText,
-                      decoration: InputDecoration(
-                        hintText: 'Password',
-                        hintStyle: AppTextStyles.hintText,
-                        filled: true,
-                        fillColor: AppColors.cardBackground,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.lock,
+                  Obx(() => TextFormField(  // Changed from TextField to TextFormField to allow validation
+                    controller: controller.passwordController,
+                    obscureText: !controller.isPasswordVisible.value,  // Fix inverted logic
+                    style: AppTextStyles.inputText,
+                    decoration: InputDecoration(
+                      hintText: 'Password',
+                      hintStyle: AppTextStyles.hintText,
+                      filled: true,
+                      fillColor: AppColors.cardBackground,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.lock,
+                        color: AppColors.textLight,
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          controller.isPasswordVisible.value
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                           color: AppColors.textLight,
                         ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            controller.isPasswordVisible.value
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: AppColors.textLight,
-                          ),
-                          onPressed: controller.togglePasswordVisibility,
-                        ),
+                        onPressed: controller.togglePasswordVisibility,
                       ),
                     ),
-                  ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your password';
+                      }
+                      return null;
+                    },
+                  )),
                   const SizedBox(height: 30),
                   // Login Button
-                  Obx(
-                    () => CustomButton(
-                      text: 'LOGIN',
-                      onPressed: controller.loginWithEmailAndPassword,
-                      isLoading: controller.isLoading.value,
-                    ),
-                  ),
+                  Obx(() => CustomButton(
+                    text: 'LOGIN',
+                    onPressed: controller.loginWithEmailAndPassword,
+                    isLoading: controller.isLoading.value,
+                  )),
                   const SizedBox(height: 20),
                   // Register Link
                   Row(
@@ -128,7 +138,7 @@ class LoginView extends GetView<AuthController> {
                         style: AppTextStyles.bodyText,
                       ),
                       GestureDetector(
-                        onTap: () => Get.toNamed('/register'),
+                        onTap: () => controller.goToRegister(),  // Using controller method
                         child: Text(
                           'REGISTER',
                           style: AppTextStyles.bodyText.copyWith(

@@ -16,6 +16,8 @@ void main() async {
    ServiceBinding().dependencies();
   // Initialize GetStorage for local storage
   await GetStorage.init();
+    // Initialize Supabase
+  
   
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([

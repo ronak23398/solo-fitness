@@ -1,11 +1,10 @@
 // death_controller.dart
 import 'package:get/get.dart';
 import '../../../data/services/database_service.dart';
-import '../../../data/services/payment_service.dart';
 
 class DeathController extends GetxController {
   final DatabaseService _databaseService = Get.find<DatabaseService>();
-  final PaymentService _paymentService = Get.find<PaymentService>();
+  // final PaymentService _paymentService = Get.find<PaymentService>();
   
   final RxBool isProcessing = false.obs;
   

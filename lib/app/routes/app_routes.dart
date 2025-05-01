@@ -35,7 +35,7 @@ abstract class AppRoutes {
   static const TASK_DETAILS = '/task-details';
   static const STATS = '/stats';
   static const SETTINGS = '/settings';
-
+  static const DEATH = '/death';
   // Special screens
   static const LEVEL_UP = '/level-up';
   static const CLASS_UPGRADE = '/class-upgrade';
@@ -72,6 +72,12 @@ class AppPages {
       name: AppRoutes.HOME,
       page: () => HomeView(),
       binding: HomeBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.DEATH,
+      page: () => DeathView(),
+      binding: DeathBinding(),
       transition: Transition.fadeIn,
     ),
     GetPage(
