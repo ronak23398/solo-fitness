@@ -17,7 +17,8 @@ import 'package:solo_fitness/app/modules/profile/bindings/profile_binding.dart';
 import 'package:solo_fitness/app/modules/profile/views/profile_view.dart';
 import 'package:solo_fitness/app/modules/splash_screen/splash_screen.dart';
 import 'package:solo_fitness/app/modules/store/bindings/store_binding.dart';
-import 'package:solo_fitness/app/modules/store/views/product_details.dart';
+import 'package:solo_fitness/app/modules/store/views/add_product_view.dart';
+import 'package:solo_fitness/app/modules/store/views/product_details_view.dart';
 import 'package:solo_fitness/app/modules/store/views/store_view.dart';
 import 'package:solo_fitness/app/modules/streak/bindings/streak_binding.dart';
 import 'package:solo_fitness/app/modules/streak/views/streak_view.dart';
@@ -46,12 +47,12 @@ abstract class AppRoutes {
   // Tutorial
   static const ONBOARDING = '/onboarding';
 
-   // Store routes
-  static const STORE = '/store';
-  static const PRODUCT_DETAIL = '/product-detail';
-  static const ADD_PRODUCT = '/add-product';
+  // Store routes
+  static const String STORE = '/store';
+  static const String PRODUCT_DETAIL = '/product-detail';
+  static const String ADD_PRODUCT = '/add-product';
+  static const String EDIT_PRODUCT = '/edit-product';
   static const BLACK_HEART = '/black-heart';
-  
 }
 
 class AppPages {
@@ -118,12 +119,8 @@ class AppPages {
       page: () => SplashScreen(),
       transition: Transition.fadeIn,
     ),
+    
     GetPage(
-      name: AppRoutes.LEVEL_UP,
-      page: () => LevelupView(),
-      transition: Transition.fadeIn,
-    ),
-      GetPage(
       name: AppRoutes.STORE,
       page: () => const StoreView(),
       binding: StoreBinding(),
@@ -132,7 +129,13 @@ class AppPages {
       name: AppRoutes.PRODUCT_DETAIL,
       page: () => const ProductDetailView(),
       binding: StoreBinding(),
-    )
+    ),
+    GetPage(
+      name: AppRoutes.ADD_PRODUCT, // Use the constant instead of the string
+      binding: StoreBinding(),
+      page: () => const AddProductView(),
+    ),
+
     // Your other routes...
 
     // Additional routes can be added here

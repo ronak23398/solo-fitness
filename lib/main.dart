@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:solo_fitness/app/data/services/auth_service.dart';
 import 'package:solo_fitness/app/data/services/database_services/services_binding.dart';
+import 'package:solo_fitness/app/data/services/supabase_config.dart';
 import 'package:solo_fitness/app/data/theme/app_theme.dart';
 import 'package:solo_fitness/app/routes/app_routes.dart';
 
@@ -13,10 +14,12 @@ void main() async {
   
   // Initialize Firebase
   await Firebase.initializeApp();
+  // Initialize Supabase
+  await SupabaseConfig.initialize();
    ServiceBinding().dependencies();
   // Initialize GetStorage for local storage
   await GetStorage.init();
-    // Initialize Supabase
+  
   
   
   // Set preferred orientations

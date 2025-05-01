@@ -170,9 +170,9 @@ class StoreController extends GetxController {
 
       // Upload images to Supabase if any are selected
       List<String> imageUrls = [];
-      // if (selectedImages.isNotEmpty) {
-      //   imageUrls = await storeService.uploadProductImages(selectedImages);
-      // }
+      if (selectedImages.isNotEmpty) {
+        imageUrls = await storeService.uploadProductImages(selectedImages);
+      }
 
       // Create product object
       final String productId = const Uuid().v4();
